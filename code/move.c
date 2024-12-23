@@ -275,15 +275,29 @@ int machine(int mat[4][4] , int *POSSIBLE){
 }
 
 
+// founction pour verfier si le jeu est terminer
 int jeuTermine(int mat[4][4]){
-    int temp[4][4] ;
-    int score = 0 , can = 0 ;
-    for(SDL_KeyCode i = SDLK_RIGHT ; i <= SDLK_UP ; i++){
-        copieMatrice(mat,temp);
-        move(temp,i,&score,&can);
-        if(can == 1){
-            return 0 ;
+    for (size_t i = 0; i < 4; i++)
+    {
+        for (size_t j = 0; j < 4; j++)
+        {
+            if (mat[i][j] == 0)
+            {
+                return 0 ;
+            }
+            if (i<3 && mat[i][j] == mat[i+1][j])
+            {
+                return 0 ;
+            }
+            if (j<3 && mat[i][j] == mat[i][j+1])
+            {
+                return 0 ;
+            }
+            
         }
+        
     }
     return 1 ;
 }
+
+

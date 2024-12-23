@@ -15,7 +15,7 @@ void Initial_SDL(SDL_Window **window , SDL_Renderer **renderer ){
     }
     SDL_DisplayMode display ;
     SDL_GetCurrentDisplayMode(0,&display);
-    *window = SDL_CreateWindow("IDRIS",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,display.w * 0.8, display.h * 0.8,SDL_WINDOW_SHOWN);
+    *window = SDL_CreateWindow("MINI PROJET",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,display.w * 0.8, display.h * 0.8,SDL_WINDOW_SHOWN);
     if (*window == NULL)
     {
         fprintf(stderr,"ERROR de creation fenetre : %s",
@@ -57,17 +57,6 @@ int fin(SDL_Window *window , SDL_Renderer *renderer ,TTF_Font* font, int statut)
         else return statut;
 }
 
-// affiche matrice normale
-void affichMat(int mat[4][4]){ 
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            printf("%d\t",mat[i][j]);
-        }
-        printf("\n");
-    }
-}
 
 // returne le nombre de case vide
 int CheckVide(int mat[4][4]){
@@ -84,41 +73,27 @@ int CheckVide(int mat[4][4]){
     return compt ;
 }
 
-// ajout aleatoirement un 2 ou 4 dans un des case vide (les coordonner des case vide sont dans la liste)
+// fonction pour ajouter aleatoirment dans une case vide un nombre 2 ou 4 sachant que la probabilité de 2 est 0.8 et 0.2 pour 4
 void AjoutNombreAl(int mat[4][4] , int NombreCaseVide){
-    if (NombreCaseVide == 0)
-    {
-        printf("le jeu termine.");
-        exit(-1);
+    if(NombreCaseVide == 0){
+        return ;
     }
-
-    int i = 0, j = 0, compt = 0 ;
-    int random = (rand() % NombreCaseVide) + 1 ; // random est la N eme case vide 
-    int  NomberAjouter = 2 ; // probabilite du nombre ajouter est p(X = 2) = 0.9 et p(X = 4) = 0.1 (X est le nombre ajouter)
-    if((rand() % 10 + 1)  <= 2)
+    int pos = rand() % NombreCaseVide ;
+    int value = rand() % 5 ;
+    value = (value == 0) ? 4 : 2 ;
+    for (int i = 0; i < 4; i++)
     {
-        NomberAjouter = 4 ;
-    }
-    while (i<4 && compt < random )
-    {   
-        j = 0 ;
-        while (j<4 && compt < random)
-        {
-            if (mat[i][j] == 0)
-            {
-                compt++ ;
+        for(int j = 0 ; j < 4 ; j++ ){
+            if(mat[i][j] == 0){
+                if(pos == 0){
+                    mat[i][j] = value ;
+                    return ;
+                }
+                pos-- ;
             }
-            j++;
         }
-        
-        i++;
     }
-
-    mat[--i][--j] = NomberAjouter ;
-    
-    
 }
-
 
 
 
@@ -397,3 +372,28 @@ void saveMatrixToFile(const char *filename, int matrix[4][4]) {
 
 
 
+// desplay game over dans le midle de la fenetre
+void displayLoose(SDL_Window *window , SDL_Renderer *renderer ,TTF_Font* font, int statut){
+    SDL_Surface *textSurface = TTF_RenderText_Blended(font, "GAME OVER", (SDL_Color){255,0,0,255});
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    SDL_Rect Rect = {0,0,0,0} ;
+    Rect.w = 500  ; 
+    Rect.h = 300;
+    Rect.x = 100 ;
+    Rect.y = 100 ;
+    SDL_Rect rect2 = {5,3 , textSurface->w , textSurface->h};
+    // Copier la texture de text dans le dans le texture qui a le background noire
+    SDL_Texture *textureTemp = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGB888,SDL_TEXTUREACCESS_TARGET,Rect.w,Rect.h);
+    SDL_SetRenderTarget(renderer,textureTemp);
+    SDL_SetRenderDrawColor(renderer,205, 193, 180,255);
+    SDL_RenderClear(renderer);
+    SDL_RenderCopy(renderer, textTexture, NULL, &rect2);
+    SDL_SetRenderTarget(renderer,NULL);
+    SDL_RenderCopy(renderer,textureTemp,NULL,&Rect);
+    // Libérer la surface et la texture
+    SDL_DestroyTexture(textureTemp);
+    SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(textTexture);
+    SDL_RenderPresent(renderer);
+
+}

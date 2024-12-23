@@ -36,10 +36,10 @@ int main(int argc, char *argv[])
     SDL_Rect gameRect = {0,0,555,555} ;
     Mode ModePlay = HOME ;
     SDL_Event event ;
-    int delay = 2000 , count = 0 ;
+    int delay = 1000 , count = 0 ;
     int mat[4][4] , MachineMat[4][4];  RESET_Matrix(mat); RESET_Matrix(MachineMat) ;
     int CanMove = 1 ;
-    int stop = 0 , score = 0;
+    int stop = 0 , score = 0 , possible , machineScore = 0 ;
     int tempJouer = 0 , count2 = 0;
     Initial_SDL(&window,&renderer);
     TTF_Font* font = TTF_OpenFont("arial.ttf",24) ;
@@ -88,8 +88,6 @@ int main(int argc, char *argv[])
                         gameRect.w  = windowWidth / 2 - 5 ;
                         gameRect.h = windowHeight * 0.8 ;
                         SDL_RenderCopy(renderer,Mat_Texture(renderer,mat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
-                        gameRect.x = 0;
-                        SDL_RenderCopy(renderer,Mat_Texture(renderer,MachineMat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
                         SDL_RenderPresent(renderer);
 
                     }
@@ -99,62 +97,136 @@ int main(int argc, char *argv[])
             else if(event.type == SDL_KEYDOWN) {
 
                 if(ModePlay == PLAYER){
-                    
-                    move(mat,event.key.keysym.sym,&score,&CanMove);
-                    
-                    if(CanMove){
-                        AjoutNombreAl(mat , CheckVide(mat)) ;
-                        tempJouer = (SDL_GetTicks() - count)/1000 ;
-                        Affiche_ModePlayer(renderer,Mat_Texture(renderer,mat,windowWidth * 0.8,windowHeight,colors,font) ,windowWidth,windowHeight ,tempJouer,font ,score);
+                    if (jeuTermine(mat)==0){
+                        move(mat,event.key.keysym.sym,&score,&CanMove);
+                        if(CanMove){
+                            AjoutNombreAl(mat , CheckVide(mat)) ;
+                            tempJouer = (SDL_GetTicks() - count)/1000 ;
+                            Affiche_ModePlayer(renderer,Mat_Texture(renderer,mat,windowWidth * 0.8,windowHeight,colors,font) ,windowWidth,windowHeight ,tempJouer,font ,score);
+                        }
                     }
                 }
                 else if(ModePlay == PLAYERvsMACHIN){
-                    move(mat,event.key.keysym.sym,&score,&CanMove);
-                    if(CanMove){
-                        AjoutNombreAl(mat , CheckVide(mat)) ;
-                        gameRect.x = windowWidth / 2 + 5 ;
-                        gameRect.y = windowHeight * 0.2 ;
-                        gameRect.w  = windowWidth / 2 - 5 ;
-                        gameRect.h = windowHeight * 0.8 ;
-                        SDL_RenderCopy(renderer,Mat_Texture(renderer,mat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
-                    }
-                    move(MachineMat,machine(MachineMat , &CanMove),&score , &CanMove) ;
-                    if(CanMove){
-                        AjoutNombreAl(MachineMat , CheckVide(mat)) ;
-                        gameRect.x = 0;
-                        SDL_RenderCopy(renderer,Mat_Texture(renderer,MachineMat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
-                        SDL_RenderPresent(renderer);
+                    if(jeuTermine(mat)==0){
+                        move(mat,event.key.keysym.sym,&score,&CanMove);
+                        if(CanMove){
+                            AjoutNombreAl(mat , CheckVide(mat)) ;
+                            gameRect.x = windowWidth / 2 + 5 ;
+                            gameRect.y = windowHeight * 0.2 ;
+                            gameRect.w  = windowWidth / 2 - 5 ;
+                            gameRect.h = windowHeight * 0.8 ;
+                            SDL_RenderCopy(renderer,Mat_Texture(renderer,mat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
+                        }
                     }
                     
                 }
             }
         }
         // Machine play after delay
-        if((SDL_GetTicks() - count)>delay && ModePlay == MACHINE){
+        if((SDL_GetTicks() - count)>delay && ModePlay == MACHINE && !jeuTermine(mat) ){
             count = SDL_GetTicks() ;
             tempJouer = (SDL_GetTicks() - count2)/1000;
-            if(CanMove){
-                move(mat,machine(mat , &CanMove) ,&score , &CanMove) ;
-                AjoutNombreAl(mat , CheckVide(mat)) ;
-                Affiche_ModePlayer(renderer,Mat_Texture(renderer,mat,windowWidth * 0.8,windowHeight,colors,font) ,windowWidth,windowHeight ,tempJouer,font ,score);
-            }
+            void encadre(SDL_Renderer *rend , int mat[4][4] , SDL_KeyCode MoveDir);
+            move(mat,machine(mat , &CanMove) ,&score , &CanMove) ;
+            AjoutNombreAl(mat , CheckVide(mat)) ;
+            Affiche_ModePlayer(renderer,Mat_Texture(renderer,mat,windowWidth * 0.8,windowHeight,colors,font) ,windowWidth,windowHeight ,tempJouer,font ,score);
             
         }
         else if(ModePlay == PLAYER){
-            tempJouer = (SDL_GetTicks() - count2)/1000 ;
-            Affiche_ModePlayer(renderer,Mat_Texture(renderer,mat,windowWidth * 0.8,windowHeight,colors,font) ,windowWidth,windowHeight ,tempJouer,font ,score);
+            if(jeuTermine(mat)==0){
+                tempJouer = (SDL_GetTicks() - count2)/1000 ;
+                Affiche_ModePlayer(renderer,Mat_Texture(renderer,mat,windowWidth * 0.8,windowHeight,colors,font) ,windowWidth,windowHeight ,tempJouer,font ,score);
+            }
+            else{
+                ModePlay == GAMEOVER ;
+            }
         }
         else if(ModePlay == PLAYERvsMACHIN){
-            if(jeuTermine(MachineMat) == 0){
-                move(MachineMat,machine(MachineMat , &CanMove),&score , &CanMove) ;
-                if(CanMove){
-                    AjoutNombreAl(MachineMat , CheckVide(mat)) ;
-                    gameRect.x = 0;
-                    SDL_RenderCopy(renderer,Mat_Texture(renderer,MachineMat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
-                    SDL_RenderPresent(renderer);
-                }
+            if(!jeuTermine(MachineMat)&& SDL_GetTicks() - count > delay){
+                count = SDL_GetTicks() ;
+                move(MachineMat,machine(MachineMat , &possible),&machineScore , &possible) ;
+                AjoutNombreAl(MachineMat , CheckVide(mat)) ;
+                gameRect.x = 0;
+                SDL_RenderCopy(renderer,Mat_Texture(renderer,MachineMat,windowWidth/2-5,windowHeight*0.8,colors,font),NULL,&gameRect);
+                SDL_RenderPresent(renderer);
+                
             }
+            if(!jeuTermine(mat) || !jeuTermine(MachineMat)){
+                // ajouter le temps dans le mode joueur vs machine
+                tempJouer = (SDL_GetTicks() - count2)/1000 ;
+                // afficher le temps dans le midle up de la fenetre
+                SDL_Surface *textSurface = temps(renderer,tempJouer,font);
+                SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                SDL_Rect Rect = {0,0,0,0} ;
+                Rect.w = textSurface->w + 10  ; //0.8 * 0.2
+                Rect.h = textSurface->h + 6;
+                Rect.x = (windowWidth - textSurface->w )  / 2 ;
+                Rect.y = windowHeight * 0.1 ;
+                SDL_Rect rect2 = {5,3 , textSurface->w , textSurface->h};
+                // Copier la texture de text dans le dans le texture qui a le background noire
+                SDL_Texture *textureTemp = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGB888,SDL_TEXTUREACCESS_TARGET,Rect.w,Rect.h);
+                SDL_SetRenderTarget(renderer,textureTemp);
+                SDL_SetRenderDrawColor(renderer,205, 193, 180,255);
+                SDL_RenderClear(renderer);
+                SDL_RenderCopy(renderer, textTexture, NULL, &rect2);
+                SDL_SetRenderTarget(renderer,NULL);
+                SDL_RenderCopy(renderer,textureTemp,NULL,&Rect);
+                // Libérer la surface et la texture
+                SDL_DestroyTexture(textureTemp);
+                SDL_FreeSurface(textSurface);
+                SDL_DestroyTexture(textTexture);
+                // afficher le score de joueur
+                textSurface = scoreSurface(renderer,score,font) ;
+                textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                Rect.w = textSurface->w + 10  ;
+                Rect.h = textSurface->h + 6;
+                Rect.x = (windowWidth * 1.5 - textSurface->w )  / 2 ;
+                Rect.y = windowHeight * 0.1 ;
+                rect2.w =  textSurface->w;
+                rect2.h =  textSurface->h ;
+                // Copier la texture de text dans le dans le texture qui a le background noire
+                textureTemp = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGB888,SDL_TEXTUREACCESS_TARGET,Rect.w,Rect.h);
+                SDL_SetRenderTarget(renderer,textureTemp);
+                SDL_SetRenderDrawColor(renderer,205, 193, 180,255);
+                SDL_RenderClear(renderer);
+                SDL_RenderCopy(renderer, textTexture, NULL, &rect2);
+                SDL_SetRenderTarget(renderer,NULL);
+                SDL_RenderCopy(renderer,textureTemp,NULL,&Rect);
+                // Libérer la surface et la texture
+                SDL_DestroyTexture(textureTemp);
+                SDL_FreeSurface(textSurface);
+                SDL_DestroyTexture(textTexture);
+                // afficher le score de machine
+                textSurface = scoreSurface(renderer,machineScore,font) ;
+                textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+                Rect.w = textSurface->w + 10  ;
+                Rect.h = textSurface->h + 6;
+                Rect.x = (windowWidth * 0.5 - textSurface->w - 5)  / 2 ;
+                Rect.y = windowHeight * 0.1 ;
+                rect2.w =  textSurface->w;
+                rect2.h =  textSurface->h ;
+                // Copier la texture de text dans le dans le texture qui a le background noire
+                textureTemp = SDL_CreateTexture(renderer,SDL_PIXELFORMAT_RGB888,SDL_TEXTUREACCESS_TARGET,Rect.w,Rect.h);
+                SDL_SetRenderTarget(renderer,textureTemp);
+                SDL_SetRenderDrawColor(renderer,205, 193, 180,255);
+                SDL_RenderClear(renderer);
+                SDL_RenderCopy(renderer, textTexture, NULL, &rect2);
+                SDL_SetRenderTarget(renderer,NULL);
+                SDL_RenderCopy(renderer,textureTemp,NULL,&Rect);
+                // Libérer la surface et la texture
+                SDL_DestroyTexture(textureTemp);
+                SDL_FreeSurface(textSurface);
+                SDL_DestroyTexture(textTexture);
+                SDL_RenderPresent(renderer);
+            }
+            else{
+                ModePlay = GAMEOVER ;
+            }
+
             
+        }
+        else if(ModePlay == GAMEOVER){
+            displayLoose(window,renderer,font,0) ;
         }
             
             
